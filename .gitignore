@@ -1,0 +1,14 @@
+node_modules/
+.env
+.env.*
+!.env.example
+frontend/dist/
+backend/*.sqlite3
+backend/*.sqlite3-*
+backend/backups/
+backend/secrets/
+backend/uploads/
+backend/scripts/*.sqlite3
+backend/*.backup
+backend/dev.sqlite3.vacia-backup
+backend/src/**/*.backup-*

@@ -1,0 +1,99 @@
+/* Sinergia Companion — lightweight vector rig. Rendered small; SVG stays razor-sharp at high DPI. */
+.companion{position:fixed;left:0;top:0;width:112px;height:158px;z-index:2147483000;pointer-events:none;user-select:none;will-change:transform;transform:translate3d(0,0,0);contain:layout style}
+.companion-character{position:absolute;left:0;bottom:0;width:112px;height:158px;padding:0;border:0;background:transparent;cursor:pointer;pointer-events:auto;outline:none;overflow:visible}
+.companion-character:focus-visible{outline:2px solid #16aaa7;outline-offset:3px;border-radius:18px}
+.companion-art{position:absolute;inset:0;width:100%;height:100%;overflow:visible;transform-origin:50% 90%;will-change:transform}
+.companion-ground{position:absolute;left:21px;bottom:1px;width:70px;height:12px;border-radius:50%;background:radial-gradient(ellipse,rgba(23,59,71,.20),transparent 72%);filter:blur(2px);z-index:-1}
+.companion-bubble{position:absolute;right:-34px;bottom:146px;z-index:10;min-width:88px;max-width:190px;padding:8px 11px;border:1px solid rgba(22,63,72,.13);border-radius:12px 12px 5px 12px;background:rgba(255,255,255,.98);box-shadow:0 8px 24px rgba(17,52,62,.14);font:650 11px/1.28 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#183c47;white-space:normal;overflow-wrap:anywhere;text-align:left;opacity:1;transform:translateY(0) scale(1);animation:bubble-in .22s ease-out;pointer-events:none}
+.companion-bubble::after{content:"";position:absolute;right:20px;bottom:-5px;width:9px;height:9px;background:#fff;border-right:1px solid rgba(22,63,72,.10);border-bottom:1px solid rgba(22,63,72,.10);transform:rotate(45deg)}
+.companion-close{position:absolute;right:-7px;top:-7px;width:18px;height:18px;border:0;border-radius:50%;background:#fff;color:#567078;box-shadow:0 3px 12px rgba(0,0,0,.12);font:700 12px/18px system-ui;cursor:pointer;pointer-events:auto;opacity:.55;z-index:12}
+.companion-close:hover{opacity:1;transform:scale(1.08)}
+.companion-mini{position:fixed;right:16px;bottom:16px;width:38px;height:38px;border:0;border-radius:50%;background:#173b47;color:#fff;box-shadow:0 8px 20px rgba(0,0,0,.16);cursor:pointer;z-index:2147483000;font:800 16px system-ui}
+
+/* SVG rig. Every major limb has its own transform, so the gait reads as one body. */
+.fox-rig,.fox-tail,.fox-body,.fox-head,.fox-arm,.fox-leg,.fox-tablet,.fox-eyes,.fox-glasses,.fox-sparkles{transform-box:fill-box}
+.fox-rig{transform-origin:50% 88%}
+.fox-tail{transform-origin:18% 62%;animation:tail-idle 3.2s ease-in-out infinite}
+.fox-body{transform-origin:50% 80%;animation:breath 3.6s ease-in-out infinite}
+.fox-head{transform-origin:50% 88%;animation:head-idle 5s ease-in-out infinite}
+.fox-eyes{transform-origin:50% 50%;animation:blink 5.4s ease-in-out infinite}
+.fox-glasses{opacity:.98}
+.fox-tablet{transform-origin:50% 50%}
+.fox-sparkles{fill:none;stroke:#18aaa6;stroke-width:2.5;stroke-linecap:round;opacity:.72;animation:sparkle-idle 3s ease-in-out infinite}
+.fox-shadow{fill:rgba(23,59,71,.17);transform-box:fill-box;transform-origin:center;animation:shadow-idle 3.6s ease-in-out infinite}
+
+/* Smooth walk: the container travels with requestAnimationFrame; the rig supplies the gait. */
+.is-walking .companion-art{animation:walk-bob .46s ease-in-out infinite}
+.is-walking .fox-body{animation:walk-body .46s ease-in-out infinite}
+.is-walking .fox-head{animation:walk-head .46s ease-in-out infinite}
+.is-walking .fox-leg-left{animation:leg-left .46s cubic-bezier(.45,.05,.55,.95) infinite}
+.is-walking .fox-leg-right{animation:leg-right .46s cubic-bezier(.45,.05,.55,.95) infinite}
+.is-walking .fox-arm-left{animation:arm-left .46s cubic-bezier(.45,.05,.55,.95) infinite}
+.is-walking .fox-arm-right{animation:arm-right .46s cubic-bezier(.45,.05,.55,.95) infinite}
+.is-walking .fox-tail{animation:tail-walk .46s ease-in-out infinite}
+.is-walking .fox-tablet{animation:tablet-walk .46s ease-in-out infinite}
+.is-walking .fox-shadow{animation:shadow-walk .46s ease-in-out infinite}
+
+.is-left .companion-character{transform:scaleX(-1)}
+
+/* Click = personality, not a generic bounce. */
+.is-reacting .companion-art{animation:click-hop .62s cubic-bezier(.2,.8,.2,1)}
+.is-reacting .fox-head{animation:click-head .62s ease-out}
+.is-reacting .fox-tail{animation:click-tail .68s ease-out}
+.is-reacting .fox-arm-right{animation:click-wave .72s ease-in-out 2}
+.is-reacting .fox-eyes{animation:click-blink .62s ease-out}
+.is-reacting .fox-sparkles{animation:sparkle-burst .72s ease-out 1}
+.companion-character:active .companion-art{animation:press .16s ease-out}
+.companion-character:active .fox-tail{animation:click-tail .5s ease-out}
+.companion-click-ring{position:absolute;left:35px;top:67px;width:42px;height:42px;border:2px solid rgba(24,170,166,.48);border-radius:50%;opacity:0;pointer-events:none}
+.companion-character:active .companion-click-ring{animation:ring .48s ease-out}
+
+.companion-login .fox-arm-right{animation:click-wave .7s ease-in-out 2}
+.companion-create .companion-art,.companion-work .companion-art{animation:ready .55s ease-out}
+.companion-edit .fox-head{animation:think .7s ease-in-out 2}
+.companion-edit .fox-tablet{animation:tablet-work .55s ease-in-out infinite}
+.companion-complete .companion-art{animation:celebrate .65s cubic-bezier(.2,.8,.2,1) 2}
+.companion-complete .fox-arm-left{animation:cheer-left .65s ease-in-out 2}
+.companion-complete .fox-arm-right{animation:cheer-right .65s ease-in-out 2}
+.companion-complete .fox-sparkles{animation:sparkle-burst .65s ease-out 2}
+.companion-error .companion-art{animation:tiny-shake .3s ease-in-out 2}
+.companion-delete .fox-head{animation:head-no .45s ease-in-out 2}
+
+@keyframes bubble-in{from{opacity:0;transform:translateY(4px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes breath{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(-1px) scaleY(1.008)}}
+@keyframes head-idle{0%,100%{transform:rotate(0)}43%{transform:rotate(-1deg)}66%{transform:rotate(.7deg)}}
+@keyframes tail-idle{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(7deg)}}
+@keyframes blink{0%,43%,47%,100%{transform:scaleY(1)}45%{transform:scaleY(.12)}}
+@keyframes sparkle-idle{0%,100%{opacity:.45;transform:scale(.92)}50%{opacity:.9;transform:scale(1.06)}}
+@keyframes shadow-idle{0%,100%{transform:scaleX(1);opacity:.55}50%{transform:scaleX(.88);opacity:.35}}
+
+@keyframes walk-bob{0%,100%{transform:translateY(1px)}50%{transform:translateY(-2px)}}
+@keyframes walk-body{0%,100%{transform:rotate(-1deg) translateY(1px)}50%{transform:rotate(1deg) translateY(-1px)}}
+@keyframes walk-head{0%,100%{transform:rotate(-1deg) translateY(1px)}50%{transform:rotate(1deg) translateY(-1px)}}
+@keyframes leg-left{0%,100%{transform:rotate(15deg)}50%{transform:rotate(-15deg)}}
+@keyframes leg-right{0%,100%{transform:rotate(-15deg)}50%{transform:rotate(15deg)}}
+@keyframes arm-left{0%,100%{transform:rotate(-13deg)}50%{transform:rotate(13deg)}}
+@keyframes arm-right{0%,100%{transform:rotate(13deg)}50%{transform:rotate(-13deg)}}
+@keyframes tail-walk{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(13deg)}}
+@keyframes tablet-walk{0%,100%{transform:rotate(-1.5deg) translateY(0)}50%{transform:rotate(1.5deg) translateY(1px)}}
+@keyframes shadow-walk{0%,100%{transform:scaleX(1);opacity:.52}50%{transform:scaleX(.78);opacity:.3}}
+
+@keyframes click-hop{0%{transform:translateY(0) scale(1)}25%{transform:translateY(-7px) scale(1.02,.98)}55%{transform:translateY(1px) scale(.99,1.01)}100%{transform:none}}
+@keyframes click-head{0%,100%{transform:rotate(0)}35%{transform:rotate(-5deg)}70%{transform:rotate(4deg)}}
+@keyframes click-tail{0%{transform:rotate(-4deg)}25%{transform:rotate(24deg)}50%{transform:rotate(-16deg)}75%{transform:rotate(15deg)}100%{transform:rotate(0)}}
+@keyframes click-wave{0%,100%{transform:rotate(9deg)}25%{transform:rotate(-25deg)}50%{transform:rotate(-8deg)}75%{transform:rotate(-23deg)}}
+@keyframes click-blink{0%,70%,100%{transform:scaleY(1)}80%{transform:scaleY(.08)}}
+@keyframes sparkle-burst{0%{opacity:.2;transform:scale(.7)}45%{opacity:1;transform:scale(1.25)}100%{opacity:.3;transform:scale(.9)}}
+@keyframes ring{0%{opacity:.65;transform:scale(.45)}100%{opacity:0;transform:scale(1.45)}}
+@keyframes press{0%{transform:scale(.98)}100%{transform:scale(1)}}
+@keyframes ready{0%{transform:translateY(2px) scale(.99)}60%{transform:translateY(-3px) scale(1.01)}100%{transform:none}}
+@keyframes celebrate{0%,100%{transform:translateY(0) rotate(0)}30%{transform:translateY(-8px) rotate(-2deg)}60%{transform:translateY(-3px) rotate(2deg)}80%{transform:translateY(-7px) rotate(-1deg)}}
+@keyframes cheer-left{0%,100%{transform:rotate(-12deg)}50%{transform:rotate(-38deg)}}
+@keyframes cheer-right{0%,100%{transform:rotate(12deg)}50%{transform:rotate(38deg)}}
+@keyframes tiny-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+@keyframes head-no{0%,100%{transform:rotate(0)}50%{transform:rotate(-4deg)}}
+@keyframes think{0%,100%{transform:rotate(0)}50%{transform:rotate(-3deg) translateY(-1px)}}
+@keyframes tablet-work{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(2deg) translateY(1px)}}
+
+@media(max-width:640px){.companion{width:94px;height:133px;transform-origin:bottom right}.companion-character{width:94px;height:133px}.companion-bubble{right:-45px;bottom:124px;max-width:150px;font-size:10px;padding:7px 9px}.companion-close{right:-5px;top:-5px}}
+@media(prefers-reduced-motion:reduce){.companion-art,.companion-art *,.companion-bubble{animation:none!important}.companion-ground{filter:none}.companion{transition:none!important}}
