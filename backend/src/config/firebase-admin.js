@@ -6,82 +6,233 @@ const DEFAULT_PROJECT_ID = 'sinergia-interactiva';
 const DEFAULT_WEB_API_KEY = 'AIzaSyAvt8EqyDPEitkOeXqMk7pCtDPtfbcXlqI';
 
 function loadServiceAccount() {
-  const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT ||
-    path.resolve(__dirname, '../../secrets/firebase-service-account.json');
+  // PRODUCCIÓN: Railway
+  // La credencial se guarda como Base64 en una variable de entorno.
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_B64) {
+    try {
+      const json = Buffer.from(
+        process.env.FIREBASE_SERVICE_ACCOUNT_B64,
+        'base64'
+      ).toString('utf8');
+
+      const serviceAccount = JSON.parse(json);
+
+      if (
+        !serviceAccount.project_id ||
+        !serviceAccount.client_email ||
+        !serviceAccount.private_key
+      ) {
+        throw new Error(
+          'La credencial de Firebase Admin está incompleta.'
+        );
+      }
+
+      const expected =
+        process.env.FIREBASE_PROJECT_ID || DEFAULT_PROJECT_ID;
+
+      if (serviceAccount.project_id !== expected) {
+        console.warn(
+          `Firebase Admin: service account pertenece a "${serviceAccount.project_id}", pero Sinergia espera "${expected}".`
+        );
+      }
+
+      return serviceAccount;
+    } catch (err) {
+      throw Object.assign(
+        new Error(
+          `No se pudo cargar FIREBASE_SERVICE_ACCOUNT_B64: ${err.message}`
+        ),
+        {
+          code: 'FIREBASE_SERVICE_ACCOUNT_INVALID',
+          status: 500,
+        }
+      );
+    }
+  }
+
+  // LOCAL: utiliza el archivo de credenciales existente.
+  const serviceAccountPath =
+    process.env.FIREBASE_SERVICE_ACCOUNT ||
+    path.resolve(
+      __dirname,
+      '../../secrets/firebase-service-account.json'
+    );
+
   if (!fs.existsSync(serviceAccountPath)) {
-    throw Object.assign(new Error(
-      'No se encontrÃ³ la credencial privada de Firebase Admin. Coloca firebase-service-account.json en backend/secrets/.'
-    ), { code: 'FIREBASE_SERVICE_ACCOUNT_MISSING', status: 500 });
+    throw Object.assign(
+      new Error(
+        'No se encontró la credencial privada de Firebase Admin. Configura FIREBASE_SERVICE_ACCOUNT_B64 en producción o coloca firebase-service-account.json en backend/secrets/.'
+      ),
+      {
+        code: 'FIREBASE_SERVICE_ACCOUNT_MISSING',
+        status: 500,
+      }
+    );
   }
+
   const serviceAccount = require(serviceAccountPath);
-  if (!serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
-    throw Object.assign(new Error('La credencial de Firebase Admin estÃ¡ incompleta.'), {
-      code: 'FIREBASE_SERVICE_ACCOUNT_INVALID', status: 500,
-    });
+
+  if (
+    !serviceAccount.project_id ||
+    !serviceAccount.client_email ||
+    !serviceAccount.private_key
+  ) {
+    throw Object.assign(
+      new Error('La credencial de Firebase Admin está incompleta.'),
+      {
+        code: 'FIREBASE_SERVICE_ACCOUNT_INVALID',
+        status: 500,
+      }
+    );
   }
-  const expected = process.env.FIREBASE_PROJECT_ID || DEFAULT_PROJECT_ID;
+
+  const expected =
+    process.env.FIREBASE_PROJECT_ID || DEFAULT_PROJECT_ID;
+
   if (serviceAccount.project_id !== expected) {
-    console.warn(`Firebase Admin: service account pertenece a "${serviceAccount.project_id}", pero Sinergia espera "${expected}".`);
+    console.warn(
+      `Firebase Admin: service account pertenece a "${serviceAccount.project_id}", pero Sinergia espera "${expected}".`
+    );
   }
+
   return serviceAccount;
 }
 
 function getFirebaseAdminApp() {
   if (getApps().length) return getApps()[0];
+
   const serviceAccount = loadServiceAccount();
+
+  const expected =
+    process.env.FIREBASE_PROJECT_ID ||
+    DEFAULT_PROJECT_ID;
+
+  if (serviceAccount.project_id !== expected) {
+    console.warn(
+      `Firebase Admin: service account pertenece a "${serviceAccount.project_id}", pero Sinergia espera "${expected}".`
+    );
+  }
+
   return initializeApp({
     credential: cert(serviceAccount),
-    projectId: process.env.FIREBASE_PROJECT_ID || serviceAccount.project_id || DEFAULT_PROJECT_ID,
+    projectId:
+      process.env.FIREBASE_PROJECT_ID ||
+      serviceAccount.project_id ||
+      DEFAULT_PROJECT_ID,
   });
 }
 
 /**
- * Verifica un ID token de Firebase. Primero intenta Firebase Admin SDK.
- * Si la credencial Admin estÃ¡ desalineada pero el token es vÃ¡lido, usa
- * Identity Toolkit para verificarlo contra el proyecto web de Sinergia.
+ * Verifica un ID token de Firebase.
+ * Primero intenta Firebase Admin SDK.
+ * Si la credencial Admin no está disponible o falla,
+ * utiliza Identity Toolkit como respaldo.
  */
 async function verifyFirebaseIdToken(idToken) {
   let adminError = null;
+
   try {
     const { getAuth } = require('firebase-admin/auth');
-    const decoded = await getAuth(getFirebaseAdminApp()).verifyIdToken(idToken);
+
+    const decoded = await getAuth(
+      getFirebaseAdminApp()
+    ).verifyIdToken(idToken);
+
     return decoded;
   } catch (err) {
     adminError = err;
   }
 
-  const apiKey = process.env.FIREBASE_WEB_API_KEY || DEFAULT_WEB_API_KEY;
+  const apiKey =
+    process.env.FIREBASE_WEB_API_KEY ||
+    DEFAULT_WEB_API_KEY;
+
   try {
-    const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(apiKey)}`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ idToken }),
-    });
+    const response = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(apiKey)}`,
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          idToken,
+        }),
+      }
+    );
+
     const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.users?.[0]?.localId) {
-      const detail = data?.error?.message || adminError?.code || 'TOKEN_INVALIDO';
-      throw Object.assign(new Error(`No se pudo verificar el token de Firebase (${detail}).`), {
-        code: 'FIREBASE_TOKEN_VERIFY_FAILED',
-        status: 401,
-        cause: adminError,
-      });
+
+    if (
+      !response.ok ||
+      !data.users?.[0]?.localId
+    ) {
+      const detail =
+        data?.error?.message ||
+        adminError?.code ||
+        'TOKEN_INVALIDO';
+
+      throw Object.assign(
+        new Error(
+          `No se pudo verificar el token de Firebase (${detail}).`
+        ),
+        {
+          code: 'FIREBASE_TOKEN_VERIFY_FAILED',
+          status: 401,
+          cause: adminError,
+        }
+      );
     }
+
     const account = data.users[0];
-    const providerId = account.providerUserInfo?.[0]?.providerId || null;
+
+    const providerId =
+      account.providerUserInfo?.[0]?.providerId ||
+      null;
+
     return {
       uid: account.localId,
       email: account.email || null,
       phone_number: account.phoneNumber || null,
       name: account.displayName || null,
-      firebase: { sign_in_provider: providerId === 'phone' ? 'phone' : providerId === 'password' ? 'password' : (!account.email && !account.phoneNumber ? 'anonymous' : providerId) },
+      firebase: {
+        sign_in_provider:
+          providerId === 'phone'
+            ? 'phone'
+            : providerId === 'password'
+              ? 'password'
+              : !account.email && !account.phoneNumber
+                ? 'anonymous'
+                : providerId,
+      },
     };
   } catch (err) {
-    if (err?.code === 'FIREBASE_TOKEN_VERIFY_FAILED') throw err;
-    const fallbackDetail = err?.message || 'No se pudo contactar Identity Toolkit.';
-    throw Object.assign(new Error(`Firebase no pudo validar la sesiÃ³n. ${fallbackDetail}`), {
-      code: 'FIREBASE_TOKEN_VERIFY_FAILED', status: 401, cause: adminError,
-    });
+    if (
+      err?.code ===
+      'FIREBASE_TOKEN_VERIFY_FAILED'
+    ) {
+      throw err;
+    }
+
+    const fallbackDetail =
+      err?.message ||
+      'No se pudo contactar Identity Toolkit.';
+
+    throw Object.assign(
+      new Error(
+        `Firebase no pudo validar la sesión. ${fallbackDetail}`
+      ),
+      {
+        code: 'FIREBASE_TOKEN_VERIFY_FAILED',
+        status: 401,
+        cause: adminError,
+      }
+    );
   }
 }
 
-module.exports = { getFirebaseAdminApp, verifyFirebaseIdToken, loadServiceAccount };
+module.exports = {
+  getFirebaseAdminApp,
+  verifyFirebaseIdToken,
+  loadServiceAccount,
+};
