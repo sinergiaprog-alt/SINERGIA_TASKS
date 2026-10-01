@@ -19,6 +19,8 @@ const cryptoRoutes = require('./modules/crypto.routes');
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 // ─── CORS ────────────────────────────────────────────────────────────────────
 const allowedOrigins = (process.env.CORS_ORIGINS || '')
   .split(',').map(x => x.trim()).filter(Boolean);
